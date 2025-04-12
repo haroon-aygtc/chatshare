@@ -64,8 +64,8 @@ export const contextRulesApi = {
 export const chatApi = {
   createSession: async (userId = "anonymous", businessContext = "general") => {
     const response = await api.post("/chat/session", {
-      userId,
-      businessContext,
+      user_id: userId,
+      business_context: businessContext,
     });
     return response.data;
   },
@@ -89,10 +89,10 @@ export const chatApi = {
     businessContext = "general",
   ) => {
     const response = await api.post("/chat/message", {
-      roomId,
+      room_id: roomId,
       content,
-      userId,
-      businessContext,
+      user_id: userId,
+      business_context: businessContext,
     });
     return response.data;
   },
@@ -155,7 +155,7 @@ export const adminApi = {
   },
 
   getAnalytics: async () => {
-    const response = await api.get("/admin/analytics/messages");
+    const response = await api.get("/admin/analytics");
     return response.data;
   },
 
