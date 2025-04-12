@@ -34,7 +34,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     },
     {
       name: "Prompt Templates",
-      path: "/admin/prompts",
+      path: "/admin/templates",
       icon: <FileText size={20} />,
     },
     { name: "Database", path: "/admin/database", icon: <Database size={20} /> },

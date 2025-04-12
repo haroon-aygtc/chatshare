@@ -21,11 +21,16 @@ const PromptTemplate = sequelize.define("PromptTemplate", {
   },
   businessContext: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
+    defaultValue: "general",
   },
   variables: {
     type: DataTypes.JSON, // Array of variable names used in the template
     allowNull: true,
+  },
+  isDefault: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   isActive: {
     type: DataTypes.BOOLEAN,

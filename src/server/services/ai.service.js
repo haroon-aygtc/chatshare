@@ -25,11 +25,46 @@ export const processMessage = async (message, contextRules) => {
       return generateContextBoundaryResponse(contextRules);
     }
 
+    // Search knowledge base for relevant information
+    const businessContext = contextRules?.businessContext || "general";
+    let knowledgeResults = [];
+    let knowledgeContext = "";
+
+    try {
+      // Import dynamically to avoid circular dependencies
+      const { default: knowledgeService } = await import(
+        "../services/knowledge.service.js"
+      );
+      knowledgeResults = await knowledgeService.searchKnowledgeBase(
+        message,
+        businessContext,
+      );
+
+      // Format knowledge results for inclusion in the prompt
+      if (knowledgeResults && knowledgeResults.length > 0) {
+        knowledgeContext =
+          "\n\nRelevant information from our knowledge base:\n";
+        knowledgeResults.forEach((entry, index) => {
+          knowledgeContext += `${index + 1}. ${entry.title}: ${entry.content}\n`;
+        });
+      }
+    } catch (error) {
+      console.error("Error searching knowledge base:", error);
+      // Continue without knowledge base results if there's an error
+    }
+
     // Determine which AI model to use based on context rules
     const aiModel = contextRules?.aiModel || "gemini";
 
     // Generate prompt using template if available
-    const prompt = generatePrompt(message, contextRules);
+    let prompt = await generatePrompt(message, contextRules);
+
+    // Add knowledge base information to the prompt if available
+    if (knowledgeContext) {
+      prompt += knowledgeContext;
+      prompt +=
+        "\n\nPlease use the above information from our knowledge base to inform your response.";
+    }
 
     // Process with appropriate AI model
     let response;
@@ -49,7 +84,7 @@ export const processMessage = async (message, contextRules) => {
     }
 
     // Apply post-processing to ensure response meets context requirements
-    return postProcessResponse(response, contextRules);
+    return postProcessResponse(response, contextRules, knowledgeResults);
   } catch (error) {
     console.error("Error processing message with AI:", error);
     return "I apologize, but I encountered an error processing your request. Please try again later.";
@@ -106,28 +141,65 @@ const generateContextBoundaryResponse = (contextRules) => {
 };
 
 /**
- * Generate a prompt using the template from context rules
+ * Generate a prompt using the template from context rules and prompt templates
  * @param {string} message - The user message
  * @param {Object} contextRules - The context rules with prompt template
- * @returns {string} - The generated prompt
+ * @returns {Promise<string>} - The generated prompt
  */
-const generatePrompt = (message, contextRules) => {
-  if (!contextRules || !contextRules.promptTemplate) {
-    return message; // No template, use message as is
+const generatePrompt = async (message, contextRules) => {
+  try {
+    // First check if there's a template in context rules
+    if (contextRules && contextRules.promptTemplate) {
+      let prompt = contextRules.promptTemplate;
+
+      // Replace {{message}} placeholder with actual message
+      prompt = prompt.replace(/{{message}}/g, message);
+
+      // Replace {{businessContext}} placeholder
+      prompt = prompt.replace(
+        /{{businessContext}}/g,
+        contextRules.businessContext || "general",
+      );
+
+      return prompt;
+    }
+
+    // If no template in context rules, try to get from database
+    const businessContext = contextRules?.businessContext || "general";
+
+    // Import dynamically to avoid circular dependencies
+    const { default: PromptTemplate } = await import(
+      "../models/PromptTemplate.js"
+    );
+
+    // Try to find a default template for this business context
+    const defaultTemplate = await PromptTemplate.findOne({
+      where: {
+        businessContext,
+        isDefault: true,
+        isActive: true,
+      },
+    });
+
+    if (defaultTemplate) {
+      let prompt = defaultTemplate.template;
+
+      // Replace {{message}} placeholder with actual message
+      prompt = prompt.replace(/{{message}}/g, message);
+
+      // Replace {{businessContext}} placeholder
+      prompt = prompt.replace(/{{businessContext}}/g, businessContext);
+
+      return prompt;
+    }
+
+    // If no template found, just return the message
+    return message;
+  } catch (error) {
+    console.error("Error generating prompt:", error);
+    // If there's an error, just return the original message
+    return message;
   }
-
-  let prompt = contextRules.promptTemplate;
-
-  // Replace {{message}} placeholder with actual message
-  prompt = prompt.replace(/{{message}}/g, message);
-
-  // Replace {{businessContext}} placeholder
-  prompt = prompt.replace(
-    /{{businessContext}}/g,
-    contextRules.businessContext || "general",
-  );
-
-  return prompt;
 };
 
 /**
@@ -199,11 +271,20 @@ const processWithHuggingFace = async (prompt) => {
  * Post-process an AI response to ensure it meets context requirements
  * @param {string} response - The raw AI response
  * @param {Object} contextRules - The context rules to apply
+ * @param {Array} knowledgeResults - Knowledge base search results
  * @returns {string} - The processed response
  */
-const postProcessResponse = (response, contextRules) => {
-  // Implement any post-processing logic here
-  // For example, filtering out inappropriate content or formatting
+const postProcessResponse = (response, contextRules, knowledgeResults = []) => {
+  // Add attribution to knowledge base if results were used
+  if (knowledgeResults && knowledgeResults.length > 0) {
+    let attribution = "\n\nSources from our knowledge base:\n";
+    knowledgeResults.forEach((entry, index) => {
+      attribution += `[${index + 1}] ${entry.title}\n`;
+    });
+
+    return response + attribution;
+  }
+
   return response;
 };
 

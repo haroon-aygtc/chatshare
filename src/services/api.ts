@@ -159,25 +159,39 @@ export const adminApi = {
     return response.data;
   },
 
-  getPromptTemplates: async (page = 1, limit = 10) => {
-    const response = await api.get(
-      `/admin/prompt-templates?page=${page}&limit=${limit}`,
-    );
+  getPromptTemplates: async (page = 1, limit = 10, businessContext = "") => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (businessContext) params.append("businessContext", businessContext);
+
+    const response = await api.get(`/templates?${params.toString()}`);
+    return response.data;
+  },
+
+  getTemplateById: async (id: string) => {
+    const response = await api.get(`/templates/${id}`);
+    return response.data;
+  },
+
+  getDefaultTemplate: async (businessContext: string) => {
+    const response = await api.get(`/templates/default/${businessContext}`);
     return response.data;
   },
 
   createPromptTemplate: async (template: any) => {
-    const response = await api.post("/admin/prompt-templates", template);
+    const response = await api.post("/templates", template);
     return response.data;
   },
 
   updatePromptTemplate: async (id: string, template: any) => {
-    const response = await api.put(`/admin/prompt-templates/${id}`, template);
+    const response = await api.put(`/templates/${id}`, template);
     return response.data;
   },
 
   deletePromptTemplate: async (id: string) => {
-    const response = await api.delete(`/admin/prompt-templates/${id}`);
+    const response = await api.delete(`/templates/${id}`);
     return response.data;
   },
 };

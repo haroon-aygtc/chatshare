@@ -12,6 +12,9 @@ const SessionsTable = lazy(() => import("@/components/admin/SessionsTable"));
 const ContextRulesTable = lazy(
   () => import("@/components/admin/ContextRulesTable"),
 );
+const PromptTemplatesTable = lazy(
+  () => import("@/components/admin/PromptTemplatesTable"),
+);
 
 // Define routes
 const router = createBrowserRouter([
@@ -46,6 +49,10 @@ const router = createBrowserRouter([
       {
         path: "contexts",
         element: <ContextRulesTable />,
+      },
+      {
+        path: "templates",
+        element: <PromptTemplatesTable />,
       },
     ],
   },
