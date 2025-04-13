@@ -1,0 +1,12 @@
+import ResponseFormatForm from "@/components/admin/ResponseFormatForm";
+
+export default function ResponseFormatFormStoryboard() {
+  return (
+    <div className="bg-background p-6">
+      <ResponseFormatForm
+        onSubmit={(data) => console.log("Form submitted:", data)}
+        onCancel={() => console.log("Form cancelled")}
+      />
+    </div>
+  );
+}

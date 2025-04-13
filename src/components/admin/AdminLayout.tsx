@@ -37,7 +37,21 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       path: "/admin/templates",
       icon: <FileText size={20} />,
     },
-    { name: "Database", path: "/admin/database", icon: <Database size={20} /> },
+    {
+      name: "Response Formats",
+      path: "/admin/formats",
+      icon: <FileText size={20} />,
+    },
+    {
+      name: "Knowledge Base",
+      path: "/admin/knowledge",
+      icon: <Database size={20} />,
+    },
+    {
+      name: "Follow-up Questions",
+      path: "/admin/followups",
+      icon: <MessageSquare size={20} />,
+    },
     { name: "Settings", path: "/admin/settings", icon: <Settings size={20} /> },
   ];
 

@@ -22,7 +22,11 @@ export const processMessage = async (message, contextRules) => {
   try {
     // Check if message is within allowed context
     if (!isWithinContext(message, contextRules)) {
-      return generateContextBoundaryResponse(contextRules);
+      const boundaryResponse = generateContextBoundaryResponse(contextRules);
+      return {
+        content: boundaryResponse,
+        isContextBoundary: true,
+      };
     }
 
     // Search knowledge base for relevant information
@@ -63,7 +67,7 @@ export const processMessage = async (message, contextRules) => {
     if (knowledgeContext) {
       prompt += knowledgeContext;
       prompt +=
-        "\n\nPlease use the above information from our knowledge base to inform your response.";
+        "\n\nPlease use the above information from our knowledge base to inform your response. Format your response in a clear, professional manner with sections and bullet points where appropriate.";
     }
 
     // Process with appropriate AI model
@@ -84,10 +88,20 @@ export const processMessage = async (message, contextRules) => {
     }
 
     // Apply post-processing to ensure response meets context requirements
-    return postProcessResponse(response, contextRules, knowledgeResults);
+    const formattedResponse = await postProcessResponse(
+      response,
+      contextRules,
+      knowledgeResults,
+    );
+
+    return formattedResponse;
   } catch (error) {
     console.error("Error processing message with AI:", error);
-    return "I apologize, but I encountered an error processing your request. Please try again later.";
+    return {
+      content:
+        "I apologize, but I encountered an error processing your request. Please try again later.",
+      error: true,
+    };
   }
 };
 
@@ -272,20 +286,64 @@ const processWithHuggingFace = async (prompt) => {
  * @param {string} response - The raw AI response
  * @param {Object} contextRules - The context rules to apply
  * @param {Array} knowledgeResults - Knowledge base search results
- * @returns {string} - The processed response
+ * @returns {Promise<Object>} - The processed response with formatting
  */
-const postProcessResponse = (response, contextRules, knowledgeResults = []) => {
-  // Add attribution to knowledge base if results were used
-  if (knowledgeResults && knowledgeResults.length > 0) {
-    let attribution = "\n\nSources from our knowledge base:\n";
-    knowledgeResults.forEach((entry, index) => {
-      attribution += `[${index + 1}] ${entry.title}\n`;
-    });
+const postProcessResponse = async (
+  response,
+  contextRules,
+  knowledgeResults = [],
+) => {
+  try {
+    // Get follow-up questions if available
+    let followUpQuestions = [];
+    try {
+      const { default: followupService } = await import(
+        "../services/followup.service.js"
+      );
+      const businessContext = contextRules?.businessContext || "general";
+      followUpQuestions =
+        await followupService.getFollowUpsByBusinessContext(businessContext);
+    } catch (error) {
+      console.error("Error getting follow-up questions:", error);
+      // Continue without follow-up questions if there's an error
+    }
 
-    return response + attribution;
+    // Format the response using the response format service
+    try {
+      const { default: formatService } = await import(
+        "../services/format.service.js"
+      );
+      const businessContext = contextRules?.businessContext || "general";
+
+      // Get the default format for this business context
+      const format = await formatService.getDefaultFormat(businessContext);
+
+      // Format the response
+      return formatService.formatResponse(
+        response,
+        format,
+        knowledgeResults,
+        followUpQuestions,
+      );
+    } catch (error) {
+      console.error("Error formatting response:", error);
+      // If formatting fails, return a basic formatted response
+      return {
+        content: response,
+        sources: knowledgeResults.map((entry) => ({
+          title: entry.title,
+          id: entry.id,
+        })),
+        followUpQuestions: followUpQuestions,
+      };
+    }
+  } catch (error) {
+    console.error("Error in post-processing response:", error);
+    // Return a basic response if all else fails
+    return {
+      content: response,
+    };
   }
-
-  return response;
 };
 
 export default {

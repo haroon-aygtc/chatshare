@@ -159,6 +159,7 @@ export const adminApi = {
     return response.data;
   },
 
+  // Prompt Templates API
   getPromptTemplates: async (page = 1, limit = 10, businessContext = "") => {
     const params = new URLSearchParams({
       page: String(page),
@@ -192,6 +193,98 @@ export const adminApi = {
 
   deletePromptTemplate: async (id: string) => {
     const response = await api.delete(`/templates/${id}`);
+    return response.data;
+  },
+
+  // Response Formats API
+  getResponseFormats: async (page = 1, limit = 10, businessContext = "") => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (businessContext) params.append("businessContext", businessContext);
+
+    const response = await api.get(`/formats?${params.toString()}`);
+    return response.data;
+  },
+
+  getFormatById: async (id: string) => {
+    const response = await api.get(`/formats/${id}`);
+    return response.data;
+  },
+
+  getDefaultFormat: async (businessContext: string) => {
+    const response = await api.get(`/formats/default/${businessContext}`);
+    return response.data;
+  },
+
+  createResponseFormat: async (format: any) => {
+    const response = await api.post("/formats", format);
+    return response.data;
+  },
+
+  updateResponseFormat: async (id: string, format: any) => {
+    const response = await api.put(`/formats/${id}`, format);
+    return response.data;
+  },
+
+  deleteResponseFormat: async (id: string) => {
+    const response = await api.delete(`/formats/${id}`);
+    return response.data;
+  },
+
+  formatResponse: async (
+    formatId: string,
+    response: string,
+    knowledgeSources: any[] = [],
+    followUpQuestions: any[] = [],
+  ) => {
+    const data = {
+      formatId,
+      response,
+      knowledgeSources,
+      followUpQuestions,
+    };
+    const apiResponse = await api.post("/formats/format-response", data);
+    return apiResponse.data;
+  },
+
+  // Knowledge Base API
+  getKnowledgeEntries: async (page = 1, limit = 10, businessContext = "") => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (businessContext) params.append("businessContext", businessContext);
+
+    const response = await api.get(`/knowledge?${params.toString()}`);
+    return response.data;
+  },
+
+  searchKnowledgeBase: async (query: string, businessContext = "general") => {
+    const params = new URLSearchParams({
+      query,
+      businessContext,
+    });
+
+    const response = await api.get(`/knowledge/search?${params.toString()}`);
+    return response.data;
+  },
+
+  // Follow-up Questions API
+  getFollowUpQuestions: async (page = 1, limit = 10, businessContext = "") => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (businessContext) params.append("businessContext", businessContext);
+
+    const response = await api.get(`/followups?${params.toString()}`);
+    return response.data;
+  },
+
+  getFollowUpsByBusinessContext: async (businessContext: string) => {
+    const response = await api.get(`/followups/business/${businessContext}`);
     return response.data;
   },
 };
