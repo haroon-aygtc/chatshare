@@ -134,6 +134,95 @@ export const authApi = {
   },
 };
 
+// API service for widget configuration
+export const widgetConfigApi = {
+  getWidgetConfig: async (businessContext = "general") => {
+    const response = await api.get(
+      `/admin/widget-config?businessContext=${businessContext}`,
+    );
+    return response.data;
+  },
+
+  saveWidgetConfig: async (config: any) => {
+    const response = await api.post("/admin/widget-config", config);
+    return response.data;
+  },
+};
+
+// API service for AI configuration
+export const aiConfigApi = {
+  getAIConfiguration: async () => {
+    const response = await api.get("/admin/ai-configuration");
+    return response.data;
+  },
+
+  saveAIConfiguration: async (config: any) => {
+    const response = await api.post("/admin/ai-configuration", config);
+    return response.data;
+  },
+};
+
+// API service for AI logs
+export const aiLogsApi = {
+  getAILogs: async (
+    page = 1,
+    limit = 10,
+    search = "",
+    status = "all",
+    model = "all",
+    businessContext = "all",
+  ) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+
+    if (search) params.append("search", search);
+    if (status !== "all") params.append("status", status);
+    if (model !== "all") params.append("model", model);
+    if (businessContext !== "all")
+      params.append("businessContext", businessContext);
+
+    const response = await api.get(`/admin/ai-logs?${params.toString()}`);
+    return response.data;
+  },
+
+  getAILogById: async (id: string) => {
+    const response = await api.get(`/admin/ai-logs/${id}`);
+    return response.data;
+  },
+
+  exportAILogs: async (format = "json", filters = {}) => {
+    const params = new URLSearchParams({ format });
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.append(key, String(value));
+    });
+
+    const response = await api.get(
+      `/admin/ai-logs/export?${params.toString()}`,
+      {
+        responseType: "blob",
+      },
+    );
+    return response.data;
+  },
+};
+
+// API service for embed code
+export const embedCodeApi = {
+  getEmbedSettings: async (businessContext = "general") => {
+    const response = await api.get(
+      `/admin/embed-settings?businessContext=${businessContext}`,
+    );
+    return response.data;
+  },
+
+  saveEmbedSettings: async (settings: any) => {
+    const response = await api.post("/admin/embed-settings", settings);
+    return response.data;
+  },
+};
+
 // API service for admin operations
 export const adminApi = {
   getUsers: async (page = 1, limit = 10, search = "") => {

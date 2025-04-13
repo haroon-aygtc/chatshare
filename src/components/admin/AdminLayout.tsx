@@ -9,6 +9,7 @@ import {
   Globe,
   Database,
   LogOut,
+  Code,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,26 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       name: "Follow-up Questions",
       path: "/admin/followups",
       icon: <MessageSquare size={20} />,
+    },
+    {
+      name: "Widget Config",
+      path: "/admin/widget-config",
+      icon: <Settings size={20} />,
+    },
+    {
+      name: "Embed Code",
+      path: "/admin/embed-code",
+      icon: <Code size={20} />,
+    },
+    {
+      name: "AI Logs",
+      path: "/admin/ai-logs",
+      icon: <FileText size={20} />,
+    },
+    {
+      name: "AI Configuration",
+      path: "/admin/ai-configuration",
+      icon: <Settings size={20} />,
     },
     { name: "Settings", path: "/admin/settings", icon: <Settings size={20} /> },
   ];

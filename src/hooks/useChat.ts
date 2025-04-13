@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { ChatMessage } from "@/components/chat/ChatWidget";
 import { useSocket } from "./useSocket";
@@ -9,6 +9,7 @@ interface UseChatReturn {
   isLoading: boolean;
   error: Error | null;
   sendMessage: (content: string) => Promise<void>;
+  handleFollowUpSelection: (question: string) => void;
   roomId: string | null;
   initializeChat: () => Promise<void>;
 }
@@ -58,6 +59,20 @@ export const useChat = (
     }
   }, [businessContext]);
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      const messagesContainer = document.querySelector(".scroll-area-viewport");
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }, 100);
+  };
+
   // Listen for incoming messages
   useEffect(() => {
     if (!socket || !connected) return;
@@ -67,6 +82,7 @@ export const useChat = (
       if (message.role === "assistant") {
         setIsLoading(false);
       }
+      scrollToBottom();
     };
 
     const handleError = (err: { message: string }) => {
@@ -82,6 +98,11 @@ export const useChat = (
       socket.off("error", handleError);
     };
   }, [socket, connected]);
+
+  // Handle follow-up question selection
+  const handleFollowUpSelection = useCallback((question: string) => {
+    sendMessage(question);
+  }, []);
 
   // Send message function
   const sendMessage = useCallback(
@@ -102,6 +123,19 @@ export const useChat = (
       // Add user message to state
       setMessages((prev) => [...prev, userMessage]);
 
+      // Add a loading message that will be replaced with the actual response
+      const loadingMessageId = uuidv4();
+      const loadingMessage: ChatMessage = {
+        id: loadingMessageId,
+        content: "Thinking...",
+        role: "assistant",
+        timestamp: new Date(),
+        businessContext,
+        isLoading: true,
+      };
+
+      setMessages((prev) => [...prev, loadingMessage]);
+
       try {
         const userId = localStorage.getItem("userId") || "anonymous";
 
@@ -113,6 +147,7 @@ export const useChat = (
             userId,
             businessContext,
           });
+          // The response will come through the socket event listener
         } else {
           // Fallback to REST API
           await chatApi.sendMessage(roomId!, content, userId, businessContext);
@@ -120,9 +155,19 @@ export const useChat = (
           // Since we're using REST, we need to manually fetch the AI response
           // In a real implementation, this would be handled by the server
           // and sent back via socket or as part of the response
+
+          // Remove the loading message
+          setMessages((prev) =>
+            prev.filter((msg) => msg.id !== loadingMessageId),
+          );
           setIsLoading(false);
         }
       } catch (err) {
+        // Remove the loading message
+        setMessages((prev) =>
+          prev.filter((msg) => msg.id !== loadingMessageId),
+        );
+
         setError(err instanceof Error ? err : new Error("Unknown error"));
         setIsLoading(false);
         console.error("Error sending message:", err);
@@ -136,6 +181,7 @@ export const useChat = (
     isLoading,
     error,
     sendMessage,
+    handleFollowUpSelection,
     roomId,
     initializeChat,
   };

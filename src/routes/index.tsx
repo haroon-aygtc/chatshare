@@ -18,6 +18,15 @@ const PromptTemplatesTable = lazy(
 const ResponseFormatsTable = lazy(
   () => import("@/components/admin/ResponseFormatsTable"),
 );
+const FollowUpQuestionsTable = lazy(
+  () => import("@/components/admin/FollowUpQuestionsTable"),
+);
+const WidgetConfig = lazy(() => import("@/components/admin/WidgetConfig"));
+const AIConfiguration = lazy(
+  () => import("@/components/admin/AIConfiguration"),
+);
+const AILogs = lazy(() => import("@/components/admin/AILogs"));
+const EmbedCode = lazy(() => import("@/components/admin/EmbedCode"));
 
 // Define routes
 const router = createBrowserRouter([
@@ -60,6 +69,26 @@ const router = createBrowserRouter([
       {
         path: "formats",
         element: <ResponseFormatsTable />,
+      },
+      {
+        path: "followups",
+        element: <FollowUpQuestionsTable />,
+      },
+      {
+        path: "widget-config",
+        element: <WidgetConfig />,
+      },
+      {
+        path: "ai-configuration",
+        element: <AIConfiguration />,
+      },
+      {
+        path: "ai-logs",
+        element: <AILogs />,
+      },
+      {
+        path: "embed-code",
+        element: <EmbedCode />,
       },
     ],
   },
